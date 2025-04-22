@@ -10,5 +10,7 @@
             "name": "Marcos M. Ferreira"
         }
     ],
-    "require": {}
+    "require": {
+        "vlucas/phpdotenv": "*"
+    }
 }
