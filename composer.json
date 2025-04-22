@@ -1,0 +1,14 @@
+{
+    "name": "customax/backend",
+    "autoload": {
+        "psr-4": {
+            "Customax\\Backend\\src": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Marcos M. Ferreira"
+        }
+    ],
+    "require": {}
+}
