@@ -8,11 +8,11 @@ class User {
     private $createdAt;
 
     // Construtor para inicializar as propriedades
-    public function __construct($name, $email, $password, $createdAt = null) {
+    public function __construct($name = null, $email = null, $password = null, $createdAt = null) {
         $this->name = $name;
         $this->email = $email;
         $this->password = $password;
-        $this->createdAt = $createdAt ?? date('Y-m-d H:i:s'); // Se não for passado, usa a data e hora atual
+        $this->createdAt = $createdAt ?? date('Y-m-d H:i:s');
     }
 
     public function getId() {
