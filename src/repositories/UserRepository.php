@@ -1,47 +1,77 @@
 <?php
 namespace Src\Repositories;
 
+use PDO;
 use Src\Config\Database;
 use Src\Models\User;
 
 class UserRepository {
     private $connection;
+
     public function __construct() {
-        $this->connection = Database::getConnection(); // Obtém a conexão do banco de dados
+        $this->connection = Database::getConnection();
     }
+
     public function createUser(User $user) {
-        $query = "INSERT INTO users (name, email, password, createdAt) VALUES (?, ?, ?, ?)";
+        $query = "INSERT INTO users (name, email, password) VALUES (:name, :email, :password)";
         $stmt = $this->connection->prepare($query);
-        $stmt->bind_param("ssss", $user->getName(), $user->getEmail(), password_hash($user->getPassword(), PASSWORD_DEFAULT), $user->getCreatedAt());
-        return $stmt->execute();
+        $stmt->bindValue(':name', $user->getName());
+        $stmt->bindValue(':email', $user->getEmail());
+        $stmt->bindValue(':password', $user->getPassword());
+        $stmt->execute();
+
+        return $this->connection->lastInsertId(); // Retorna ID criado
     }
+
+    public function findAllUsers() {
+        $query = "SELECT * FROM users";
+        $stmt = $this->connection->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC); // Ideal para API JSON
+    }
+
     public function findUserById($id) {
-        $query = "SELECT * FROM users WHERE id = ?";
+        $query = "SELECT * FROM users WHERE id = :id";
         $stmt = $this->connection->prepare($query);
-        $stmt->bind_param("i", $id);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
-        $result = $stmt->get_result();
-        return $result->fetch_object('User');
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
     public function findUserByEmail($email) {
-        $query = "SELECT * FROM users WHERE email = ?";
+        $query = "SELECT * FROM users WHERE email = :email";
         $stmt = $this->connection->prepare($query);
-        $stmt->bind_param("s", $email);
+        $stmt->bindValue(':email', $email);
         $stmt->execute();
-        $result = $stmt->get_result();
-        return $result->fetch_object('User');
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
     public function updateUser(User $user) {
-        $query = "UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?";
+        $query = "UPDATE users SET name = :name, email = :email";
+
+        // Só atualiza a senha se ela for enviada
+        if ($user->getPassword()) {
+            $query .= ", password = :password";
+        }
+
+        $query .= " WHERE id = :id";
+
         $stmt = $this->connection->prepare($query);
-        $stmt->bind_param("sssi", $user->getName(), $user->getEmail(), password_hash($user->getPassword(), PASSWORD_DEFAULT), $user->getId());
+        $stmt->bindValue(':name', $user->getName());
+        $stmt->bindValue(':email', $user->getEmail());
+        $stmt->bindValue(':id', $user->getId(), PDO::PARAM_INT);
+
+        if ($user->getPassword()) {
+            $stmt->bindValue(':password', $user->getPassword());
+        }
+
         return $stmt->execute();
     }
+
     public function deleteUser($id) {
-        $query = "DELETE FROM users WHERE id = ?";
+        $query = "DELETE FROM users WHERE id = :id";
         $stmt = $this->connection->prepare($query);
-        $stmt->bind_param("i", $id);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         return $stmt->execute();
     }
 }
-?>
