@@ -3,33 +3,43 @@ namespace Src\Routes;
 
 use Src\Controllers\TaskController;
 
+// Para aceitar JSON de entrada
+header("Content-Type: application/json");
+
+// Cria a instância do controller
 $taskController = new TaskController();
 
-// Rota para obter todas as tarefas
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_GET['user_id'])) {
-    $taskController->getAllTasks(); // Busca todas as tasks
+$method = $_SERVER['REQUEST_METHOD'];
+$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
+if ($method === 'GET' && preg_match('/\/tasks$/', $uri)) {
+    $taskController->getAllTasks();
 }
 
-// Rota para obter as tarefas de um usuário específico
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['user_id'])) {
-    $taskController->getTasksByUser($_GET['user_id']); // Busca tasks de um usuário
+if ($method === 'GET' && isset($_GET['user_id'])) {
+    $taskController->getTasksByUser($_GET['user_id']);
 }
 
-// Rota para criar uma nova tarefa
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'], $_POST['content'], $_POST['user_id'])) {
-    // Verifica se os parâmetros necessários estão presentes
-    $taskController->createTask($_POST['name'], $_POST['content'], $_POST['user_id']);
-}
-
-// Rota para atualizar uma tarefa existente
-if ($_SERVER['REQUEST_METHOD'] === 'PUT' && isset($_GET['task_id'])) {
-    parse_str(file_get_contents("php://input"), $_PUT);  // Lê os dados do PUT
-    if (isset($_PUT['name'], $_PUT['content'])) {  // Verifica se os dados necessários estão no corpo
-        $taskController->updateTask($_GET['task_id'], $_PUT['name'], $_PUT['content']);
+if ($method === 'POST') {
+    $input = json_decode(file_get_contents("php://input"), true);
+    if (isset($input['name'], $input['content'], $input['user_id'])) {
+        $taskController->createTask($input['name'], $input['content'], $input['user_id']);
+    } else {
+        http_response_code(400);
+        echo json_encode(["error" => "Missing fields"]);
     }
 }
 
-// Rota para excluir uma tarefa
-if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && isset($_GET['task_id'])) {
-    $taskController->deleteTask($_GET['task_id']); // Exclui a tarefa com o ID fornecido
+if ($method === 'PUT' && isset($_GET['task_id'])) {
+    $input = json_decode(file_get_contents("php://input"), true);
+    if (isset($input['name'], $input['content'])) {
+        $taskController->updateTask($_GET['task_id'], $input['name'], $input['content']);
+    } else {
+        http_response_code(400);
+        echo json_encode(["error" => "Missing fields"]);
+    }
+}
+
+if ($method === 'DELETE' && isset($_GET['task_id'])) {
+    $taskController->deleteTask($_GET['task_id']);
 }
