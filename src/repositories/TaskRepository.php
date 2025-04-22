@@ -1,6 +1,7 @@
 <?php
 namespace Src\Repositories;
 
+use PDO;
 use Src\Config\Database;
 use Src\Models\Task;
 
@@ -8,64 +9,71 @@ class TaskRepository {
     private $connection;
 
     public function __construct() {
-        $this->connection = Database::getConnection(); // Obtém a conexão com o banco de dados
+        $this->connection = Database::getConnection();
     }
+
     public function createTask(Task $task) {
-        $query = "INSERT INTO tasks (name, content, user_id, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)";
+        $now = date('Y-m-d H:i:s');
+        $query = "INSERT INTO tasks (name, content, user_id, createdAt, updatedAt) VALUES (:name, :content, :user_id, :createdAt, :updatedAt)";
         $stmt = $this->connection->prepare($query);
-        $stmt->bind_param(
-            "ssiss",
-            $task->getName(),
-            $task->getContent(),
-            $task->getUserId(),
-            $task->getCreatedAt(),
-            $task->getUpdatedAt()
-        );
+
+        $stmt->bindValue(':name', $task->getName());
+        $stmt->bindValue(':content', $task->getContent());
+        $stmt->bindValue(':user_id', $task->getUserId(), PDO::PARAM_INT);
+        $stmt->bindValue(':createdAt', $now);
+        $stmt->bindValue(':updatedAt', $now);
+
         return $stmt->execute();
     }
+
     public function getAllTasks() {
         $query = "SELECT * FROM tasks";
         $stmt = $this->connection->prepare($query);
         $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
-        return $stmt->fetchAll(\PDO::FETCH_OBJ);
-    }
     public function findTaskById($id) {
-        $query = "SELECT * FROM tasks WHERE id = ?";
+        $query = "SELECT * FROM tasks WHERE id = :id";
         $stmt = $this->connection->prepare($query);
-        $stmt->bind_param("i", $id);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
-        $result = $stmt->get_result();
-        return $result->fetch_object('Src\Models\Task');
+
+        return $stmt->fetchObject(Task::class);
     }
+
     public function findTasksByUserId($userId) {
-        $query = "SELECT * FROM tasks WHERE user_id = ?";
+        $query = "SELECT * FROM tasks WHERE user_id = :user_id";
         $stmt = $this->connection->prepare($query);
-        $stmt->bind_param("i", $userId);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
         $stmt->execute();
-        $result = $stmt->get_result();
+
         $tasks = [];
-        while ($task = $result->fetch_object('Src\Models\Task')) {
+        while ($task = $stmt->fetchObject(Task::class)) {
             $tasks[] = $task;
         }
+
         return $tasks;
     }
+
     public function updateTask(Task $task) {
-        $query = "UPDATE tasks SET name = ?, content = ?, updatedAt = ? WHERE id = ?";
+        $now = date('Y-m-d H:i:s');
+        $query = "UPDATE tasks SET name = :name, content = :content, updatedAt = :updatedAt WHERE id = :id";
         $stmt = $this->connection->prepare($query);
-        $stmt->bind_param(
-            "sssi",
-            $task->getName(),
-            $task->getContent(),
-            $task->getUpdatedAt(),
-            $task->getId()
-        );
+
+        $stmt->bindValue(':name', $task->getName());
+        $stmt->bindValue(':content', $task->getContent());
+        $stmt->bindValue(':updatedAt', $now);
+        $stmt->bindValue(':id', $task->getId(), PDO::PARAM_INT);
+
         return $stmt->execute();
     }
+
     public function deleteTask($id) {
-        $query = "DELETE FROM tasks WHERE id = ?";
+        $query = "DELETE FROM tasks WHERE id = :id";
         $stmt = $this->connection->prepare($query);
-        $stmt->bind_param("i", $id);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+
         return $stmt->execute();
     }
 }
