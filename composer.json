@@ -2,7 +2,7 @@
     "name": "customax/backend",
     "autoload": {
         "psr-4": {
-            "Customax\\Backend\\src": "src/"
+            "Src\\": "src/"
         }
     },
     "authors": [

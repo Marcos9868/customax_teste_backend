@@ -10,21 +10,23 @@ class Database {
 
     public static function getConnection() {
         if (self::$pdo === null) {
-            $dotenv = Dotenv::createImmutable(__DIR__, "/../");
+            $dotenv = Dotenv::createImmutable(__DIR__. "/../../");
             $dotenv->load();
 
             $host = 'localhost';
-            $dbname = getenv("MYSQL_DB");
-            $username = getenv("MYSQL_USERNAME");
-            $password = getenv("MYSQL_PASSWORD");
+            $dbname = $_ENV["MYSQL_DB"];
+            $username = $_ENV["MYSQL_USERNAME"];
+            $password = $_ENV["MYSQL_PASSWORD"];
+
+            if (!$dbname || !$username || !$password) {
+                die("Erro: As variáveis de ambiente do banco de dados não estão configuradas corretamente.");
+            }
 
             try {
-                // Criar a instância PDO
                 self::$pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
                 self::$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 self::$pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);  // Garantir fetch associativo
             } catch (PDOException $e) {
-                // Em caso de erro, exibe a mensagem
                 die("Erro de conexão: " . $e->getMessage());
             }
         }
@@ -32,4 +34,3 @@ class Database {
         return self::$pdo;
     }
 }
-?>
